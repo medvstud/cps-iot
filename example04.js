@@ -1,0 +1,40 @@
+var http = require("http").createServer(handler); //on request use handler
+var io = require("socket.io").listen(http); //socket library
+var fs = require("fs"); //var for file system for providing html
+var firmata = require("firmata");
+
+console.log("Starting the code");
+
+var board = new firmata.Board("/dev/ttyACM0", function(){ 
+    console.log("Connecting to Arduino");
+    console.log("Activation of Pin 13");
+    board.pinMode(13, board.MODES.OUTPUT); 
+});
+ function handler (req, res){ 
+ 
+     fs.readFile(__dirname + "/example04.html",
+     function (err, data){
+         if (err) {
+        res.writeHead(500, {"Content-Type": "text/plain"});
+        return res.end("Error loading html page");
+        }
+      res.writeHead(200);
+      res.end(data);
+     })
+ }  
+ 
+    
+ http.listen(8080, "172.16.22.46");
+ 
+ io.sockets.on("connection",function(socket) {
+     socket.on("commandToArduino", function(commandNo){         //command number
+        if (commandNo == "1") {
+            board.digitalWrite(13, board.HIGH); 
+        }
+        if (commandNo == 0) {
+            board.digitalWrite(13, board.LOW); 
+        }
+    });
+ });
+ 
+ 
