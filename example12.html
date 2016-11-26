@@ -1,0 +1,69 @@
+ <!DOCTYPE html>
+<meta charset = utf8>
+<html>
+    
+<head>
+        <title>DC motor control with buttons</title>
+<head>
+            
+        <body>
+       <div id="divForPrint"></div>
+            DC motor control with buttons
+            <p></p>
+            PWM: <input id="pwm" value=100 />    
+            <button id="buttonSendPWM" onClick="sendPWM()">Send PWM</button>
+            <button id="buttonLeft" onClick="left()">Left</button>
+            <button id="buttonRight" onClick="right()">Right</button>
+            <button id="buttonStop" onClick="stop()">STOP</button>
+        
+       
+            
+            <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+            <script type="text/javascript" >
+             
+            var divForPrint = document.getElementById("divForPrint");
+             var numberOfLinesInLog = 10; // variable for the number of lines in log div
+             var counterOfLogs = 0; // variable for counting the logs 
+             var valuePWM;
+              function log(msg) { 
+                var node=document.createElement("tr"); 
+                var textnode=document.createTextNode(counterOfLogs + " | " + msg); 
+                node.appendChild(textnode); // add to "node", i.e. table row
+                divForPrint.insertBefore(node, divForPrint.childNodes[0]); // insert into variable divForPrint -> document.getElementById("divForPrint");
+                if (counterOfLogs > numberOfLinesInLog-1) { // if there are more numbers as e.g. 10
+                divForPrint.removeChild(divForPrint.childNodes[numberOfLinesInLog]); // remove the oldest printout
+                    }
+                counterOfLogs = counterOfLogs + 1; // increase the counter of logs
+            }
+            var socket = io.connect("172.16.22.46:8080"); // connect via socket 
+           socket.on('messageToClient', function(msg) { // when we receive the message
+            log(msg); // we print it to div
+            });
+            function sendPWM () {
+            valuePWM = document.getElementById("pwm").value; // we senf pwm to the server
+            socket.emit("sendPWM", valuePWM);
+            }
+
+            function left () {
+            socket.emit("left", {"AIN1": 0, "AIN2": 1});
+            }
+
+            function right () {
+            socket.emit("right", {"AIN1": 1, "AIN2": 0});
+            }
+
+            function stop () {
+            socket.emit("stop", 0);
+            }
+
+
+
+
+
+            
+            </script>
+            
+        </body>
+    
+    
+</html>
