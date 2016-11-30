@@ -27,6 +27,14 @@ Kd: <input id="Kd1" value="0.25" size="5" />
 <button id="buttonStopControlAlgorithm2" onClick="stopControlAlgorithm()">Stop Ctrl Alg</button>
 <p></p>
 
+Kp: <input id="Kp3" value="0.1" size="5" />
+Ki: <input id="Ki3" value="0.001" size="5" />
+Kd: <input id="Kd3" value="0.0001" size="5" />
+
+<button id="buttonStartControlAlgorithm3" onClick="startControlAlgorithm3()">Start Ctrl Alg3</button>
+<button id="buttonStopControlAlgorithm" onClick="stopControlAlgorithm()">Stop Ctrl Alg</button>
+
+<p></p>
 <div id="divForStaticPrint"> </div>
 <p></p>
             
@@ -150,7 +158,14 @@ function startControlAlgorithm2 () {
     var Kd1 = document.getElementById("Kd1").value;
     socket.emit("startControlAlgorithm", {"ctrlAlgNo": 2, "Kp1": Kp1, "Ki1": Ki1, "Kd1": Kd1}); // send also parameters
 }
-
+function startControlAlgorithm3 () {
+    // first stop ctrlAlg, just in case
+    stopControlAlgorithm ();
+    var Kp3 = document.getElementById("Kp3").value;
+    var Ki3 = document.getElementById("Ki3").value;
+    var Kd3 = document.getElementById("Kd3").value;
+    socket.emit("startControlAlgorithm", {"ctrlAlgNo": 3, "Kp3": Kp3, "Ki3": Ki3, "Kd3": Kd3}); // send also parameters
+}
             function stopControlAlgorithm () {
             socket.emit("stopControlAlgorithm");
             }

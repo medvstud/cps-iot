@@ -16,7 +16,7 @@ var board = new firmata.Board("/dev/ttyACM0", function(){
 });
  function handler (req, res){ 
  
-     fs.readFile(__dirname + "/example16.html",
+     fs.readFile(__dirname + "/example19.html",
      function (err, data){
          if (err) {
         res.writeHead(500, {"Content-Type": "text/plain"});
@@ -44,6 +44,10 @@ var errSum = 0; // sum of errors
 var dErr = 0; // difference of error
 var lastErr = 0; // to keep the value of previous error
 //PID
+var KpE = 0; // multiplication of Kp x error
+var KiIedt = 0; // multiplication of Ki x integral of error
+var KdDe_dt = 0; // multiplication of Kd x differential of error i.e.e Derror/dt
+
  
  //******************************************
     
@@ -108,22 +112,13 @@ socket.on("stopControlAlgorithm", function(){
      }
     if (parameters.ctrlAlgNo == 2) {
   err = desiredValue - actualValue; // error
-  errSum += err; // sum of errors, like integral+
-  
-  dErr = err - lastErr; // difference of error
-  pwm = parameters.Kp1*err + parameters.Ki1*errSum + parameters.Kd1*dErr;
-  lastErr = err; // save the value for the next cycle
-  if(pwm > pwmLimit) {pwm = pwmLimit}; // to limit the value for pwm / positive
-  if(pwm < -pwmLimit) {pwm = -pwmLimit}; // to limit the value for pwm / negative
-  if (pwm > 0) {board.digitalWrite(2,1); board.digitalWrite(4,0);};  
-  if (pwm < 0) {board.digitalWrite(2,0); board.digitalWrite(4,1);};  
-  board.analogWrite(3, Math.abs(pwm));        
-    }
-    if (parameters.ctrlAlgNo == 3) {
-  err = desiredValue - actualValue; // error
   errSum += err; // sum of errors, like integral
   dErr = err - lastErr; // difference of error
-  pwm = parameters.Kp3*err + parameters.Ki3*errSum + parameters.Kd3*dErr;
+  //pwm = parameters.Kp1*err + parameters.Ki1*errSum + parameters.Kd1*dErr;
+  KpE=parameters.Kp1*err;
+KiIedt=parameters.Ki1*errSum;
+KdDe_dt=parameters.Kd1*dErr;
+pwm = KpE + KiIedt + KdDe_dt; // above parts are used
   lastErr = err; // save the value for the next cycle
   if(pwm > pwmLimit) {pwm = pwmLimit}; // to limit the value for pwm / positive
   if(pwm < -pwmLimit) {pwm = -pwmLimit}; // to limit the value for pwm / negative
@@ -132,7 +127,23 @@ socket.on("stopControlAlgorithm", function(){
   board.analogWrite(3, Math.abs(pwm));        
     }
 };
-function startControlAlgorithm (parameters) {
+ 
+
+ function sendValues (socket) {
+    socket.emit("clientReadValues",
+    { // json notation between curly braces
+    "desiredValue": desiredValue,
+    "actualValue": actualValue,
+    "pwm": pwm,
+    "err": err,
+    "errSum": errSum,
+    "dErr": dErr,
+    "KpE": KpE,
+    "KiIedt": KiIedt,
+    "KdDe_dt": KdDe_dt
+});
+ };
+ function startControlAlgorithm (parameters) {
     if (controlAlgorihtmStartedFlag == 0) {
         controlAlgorihtmStartedFlag = 1; // set flag that the algorithm has started
         intervalCtrl = setInterval(function() {controlAlgorithm(parameters); }, 30); 
@@ -149,16 +160,6 @@ function stopControlAlgorithm () {
  console.log("ctrlAlg STOPPED");
 sendStaticMsgViaSocket("Stop");
 };
- function sendValues (socket) {
-    socket.emit("clientReadValues",
-    { // json notation between curly braces
-    "desiredValue": desiredValue,
-    "actualValue": actualValue,
-    "pwm": pwm
-    });
-    console.log(desiredValue);
-};
- 
  function json2txt(obj) // function to print out the json names and values
  {
    var txt = '';
@@ -178,3 +179,4 @@ sendStaticMsgViaSocket("Stop");
    recurse(obj);
    return txt;
  }
+ 
